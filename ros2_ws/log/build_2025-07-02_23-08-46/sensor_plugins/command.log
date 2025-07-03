@@ -1,0 +1,6 @@
+Invoking command in '/home/ros/ros2_ws/build/sensor_plugins': /usr/bin/cmake /home/ros/ros2_ws/src/sensor_plugins -DCATKIN_INSTALL_INTO_PREFIX_ROOT=0 -DCMAKE_INSTALL_PREFIX=/home/ros/ros2_ws/install/sensor_plugins
+Invoked command in '/home/ros/ros2_ws/build/sensor_plugins' returned '0': /usr/bin/cmake /home/ros/ros2_ws/src/sensor_plugins -DCATKIN_INSTALL_INTO_PREFIX_ROOT=0 -DCMAKE_INSTALL_PREFIX=/home/ros/ros2_ws/install/sensor_plugins
+Invoking command in '/home/ros/ros2_ws/build/sensor_plugins': /usr/bin/cmake --build /home/ros/ros2_ws/build/sensor_plugins -- -j8 -l8
+Invoked command in '/home/ros/ros2_ws/build/sensor_plugins' returned '0': /usr/bin/cmake --build /home/ros/ros2_ws/build/sensor_plugins -- -j8 -l8
+Invoking command in '/home/ros/ros2_ws/build/sensor_plugins': /usr/bin/cmake --install /home/ros/ros2_ws/build/sensor_plugins
+Invoked command in '/home/ros/ros2_ws/build/sensor_plugins' returned '0': /usr/bin/cmake --install /home/ros/ros2_ws/build/sensor_plugins

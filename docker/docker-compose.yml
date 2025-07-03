@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  ros2_gazebo:
+    build:
+      context: ../
+      dockerfile: docker/Dockerfile
+    container_name: ros2_gazebo_plugins
+    tty: true
+    stdin_open: true
+    volumes:
+      # Mount the entire Prototype2 directory (adjust path as needed)
+      - ../ros2_ws:/ros2_ws
+      # GUI support
+      - /tmp/.X11-unix:/tmp/.X11-unix
+    environment:
+      - DISPLAY=${DISPLAY}
+      - NVIDIA_DRIVER_CAPABILITIES=all # Remove if no NVIDIA GPU
+    network_mode: host # Recommended for ROS 2
