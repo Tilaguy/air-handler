@@ -1,31 +1,44 @@
-# Stage 1: Base image with ROS 2 Humble and Gazebo Harmonic
-FROM osrf/ros:humble-desktop-full
+FROM ubuntu:22.04
 
-# Install core dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    cmake \
-    git \
-    wget \
-    libignition-common5-dev \
-    libignition-math7-dev \
-    libignition-msgs10-dev \
-    libignition-transport13-dev \
-    libsdformat14-dev \
-    libgz-sim8-dev \
-    ros-humble-gazebo-ros-pkgs \
-    ros-humble-gazebo-ros \
-    ros-humble-gazebo-plugins \
+ENV DEBIAN_FRONTEND=noninteractive
+ENV LANG=C.UTF-8 LC_ALL=C.UTF-8
+
+# Base tools
+RUN apt-get update && apt-get install -y \
+    locales curl gnupg lsb-release wget git \
+    build-essential cmake python3-pip\
+    && locale-gen en_US.UTF-8 && update-locale \
     && rm -rf /var/lib/apt/lists/*
 
-# Setup environment
-RUN echo "source /opt/ros/humble/setup.bash" >> /root/.bashrc
+# ROS 2 Humble
+RUN curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key | gpg --dearmor -o /usr/share/keyrings/ros-archive-keyring.gpg && \
+    echo "deb [arch=amd64 signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu jammy main" \
+    > /etc/apt/sources.list.d/ros2.list && \
+    apt-get update && apt-get install -y \
+    ros-humble-desktop \
+    ros-humble-gazebo-ros-pkgs \
+    && rm -rf /var/lib/apt/lists/*
 
-# Copy entrypoint script
+# Gazebo Fortress
+RUN curl -sSL https://packages.osrfoundation.org/gazebo.key | gpg --dearmor -o /usr/share/keyrings/gazebo-archive-keyring.gpg && \
+    echo "deb [arch=amd64 signed-by=/usr/share/keyrings/gazebo-archive-keyring.gpg] \
+    https://packages.osrfoundation.org/gazebo/ubuntu-stable jammy main" \
+    > /etc/apt/sources.list.d/gazebo-stable.list && \
+    apt-get update && apt-get install -y \
+    libgazebo-dev ignition-fortress \
+    && rm -rf /var/lib/apt/lists/*
+
+# colcon & vcstool via pip
+RUN pip3 install -U colcon-common-extensions vcstool rosdep
+
+
+# Setup workspace
+RUN mkdir -p /ros2_ws/src
+WORKDIR /ros2_ws
+
+# Entrypoint
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
-# Default workspace location (overridden by mount)
-WORKDIR /ros2_ws
-
 ENTRYPOINT ["/entrypoint.sh"]
+CMD ["bash"]

@@ -1,0 +1,28 @@
+# ROS 2 build artifacts
+ros2_ws/build/
+ros2_ws/install/
+ros2_ws/log/
+ros2_ws/.colcon/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Editor configs
+.vscode/
+
+# CMake/Make output
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+
+# Logs and swap files
+*.log
+*.swp
+*~
+*.bak
+.DS_Store
+
+# Docker local env
+docker/.env
