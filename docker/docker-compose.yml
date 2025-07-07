@@ -1,14 +1,22 @@
 version: "3.8"
+
 services:
   dev:
-    build: .
+    build: 
+      context: .
+      dockerfile: Dockerfile
     container_name: ros2_gz_dev
+
     environment:
       - DISPLAY=${DISPLAY}
       - QT_X11_NO_MITSHM=1
+      - GAZEBO_MODEL_PATH=/ros2_ws/src/imu_plugin/models:/usr/share/gazebo-11/models
+      - GZ_SIM_RESOURCE_PATH=/ros2_ws/src/imu_plugin/models
+
     volumes:
       - /tmp/.X11-unix:/tmp/.X11-unix:rw
       - ../ros2_ws:/ros2_ws
+
     network_mode: host
     tty: true
     stdin_open: true

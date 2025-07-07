@@ -5,7 +5,7 @@ ENV LANG=C.UTF-8 LC_ALL=C.UTF-8
 
 # Base tools
 RUN apt-get update && apt-get install -y \
-    locales curl gnupg lsb-release wget git \
+    locales curl tree gnupg lsb-release wget git \
     build-essential cmake python3-pip\
     && locale-gen en_US.UTF-8 && update-locale \
     && rm -rf /var/lib/apt/lists/*
@@ -18,6 +18,9 @@ RUN curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key | g
     ros-humble-desktop \
     ros-humble-gazebo-ros-pkgs \
     && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y \
+    python3-ament-package\
+    ros-humble-rosidl-typesupport-c
 
 # Gazebo Fortress
 RUN curl -sSL https://packages.osrfoundation.org/gazebo.key | gpg --dearmor -o /usr/share/keyrings/gazebo-archive-keyring.gpg && \
