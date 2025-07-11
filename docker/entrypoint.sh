@@ -28,5 +28,7 @@ if [ -f /ros2_ws/install/setup.bash ]; then
   grep -qxF 'source /ros2_ws/install/setup.bash' ~/.bashrc || echo 'source /ros2_ws/install/setup.bash' >> ~/.bashrc
 fi
 
+chmod +x /ros2_ws/run_sim.sh
+
 exec "$@"
 
