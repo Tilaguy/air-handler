@@ -1,43 +1,38 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.8)
 project(imu_plugin)
 
-# Compiler config
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-
-# Find dependencies
 find_package(ament_cmake REQUIRED)
+find_package(gazebo_dev REQUIRED)
+find_package(gazebo_ros REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(sensor_msgs REQUIRED)
-find_package(gazebo_ros REQUIRED)
-find_package(gazebo_dev REQUIRED)
+find_package(sensor_utils REQUIRED)
 
 include_directories(
   include
-  ${GAZEBO_INCLUDE_DIRS}
 )
 
-link_directories(
-  ${GAZEBO_LIBRARY_DIRS}
-)
-
-add_library(${PROJECT_NAME} SHARED
+add_library(imu_plugin SHARED
   src/imu_plugin.cpp
 )
 
-ament_target_dependencies(${PROJECT_NAME}
+ament_target_dependencies(imu_plugin
   rclcpp
   sensor_msgs
   gazebo_ros
+  sensor_utils
 )
 
-# Gazebo plugin install
-install(
-  TARGETS ${PROJECT_NAME}
+target_link_libraries(imu_plugin
+  ${GAZEBO_LIBRARIES}
+)
+
+install(TARGETS imu_plugin
   LIBRARY DESTINATION lib
 )
 
-# Export plugin
-ament_export_include_directories(include)
-ament_export_libraries(${PROJECT_NAME})
+install(DIRECTORY include/
+  DESTINATION include
+)
+
 ament_package()

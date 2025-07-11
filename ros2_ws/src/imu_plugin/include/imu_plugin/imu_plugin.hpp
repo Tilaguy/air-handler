@@ -34,13 +34,9 @@ namespace gazebo_plugins
     double bias_drift_stddev_ = 0.001;
     double hysteresis_width_ = 0.01;
 
-    double gaussian_noise(double stddev);
-    double clipping_values(double value, double max, double min);
     double bias_acum = 0.0;
-    double gaussian_drift(double current_val, double &bias_acum);
     double prev_val = 0.0;
     int prev_direction = 0;
-    double hysteresis(double current_val, double &prev_val, int &prev_direction);
   };
 
 } // namespace gazebo_plugins

@@ -1,15 +1,16 @@
 <?xml version="1.0" ?>
 <sdf version="1.6">
   <world name="default">
-    <!-- Suelo -->
+    <!-- Ground -->
     <include>
       <uri>model://ground_plane</uri>
     </include>
 
-    <!-- Caja con el sensor IMU -->
+    <!-- Begin import each sensor box -->
     <include>
       <uri>model://imu_box</uri>
     </include>
+    <!-- End import each sensor box -->
 
     <!-- Plugin para inicializar ROS 2 -->
     <plugin name="gazebo_ros_init" filename="libgazebo_ros_init.so">

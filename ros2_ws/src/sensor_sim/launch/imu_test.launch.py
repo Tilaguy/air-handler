@@ -6,10 +6,9 @@ def generate_launch_description():
         ExecuteProcess(
             cmd=[
                 'gazebo', '--verbose',
-                '/ros2_ws/src/test_world/worlds/imu_test.world',
+                '/ros2_ws/src/sensor_sim/worlds/imu_test.world',
                 '-s', 'libgazebo_ros_factory.so'
             ],
             output='screen'
         )
     ])
-

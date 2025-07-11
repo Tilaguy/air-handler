@@ -37,7 +37,7 @@
         <plugin name="imu_plugin" filename="libimu_plugin.so">
           /* Real parameters */
           <gyro_noise_stddev>2.3e-7</gyro_noise_stddev>
-          <accel_noise_stddev>5e-14</accel_noise_stddev>
+          <accel_noise_stddev>5e-5</accel_noise_stddev>
           <bias_drift_stddev>0.001</bias_drift_stddev>
           <hysteresis_width>0.01</hysteresis_width>
         </plugin>
