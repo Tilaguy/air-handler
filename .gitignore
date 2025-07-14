@@ -23,6 +23,7 @@ Makefile
 *~
 *.bak
 .DS_Store
+/logs/
 
 # Docker local env
 docker/.env
