@@ -1,0 +1,58 @@
+<?xml version="1.0" ?>
+<sdf version="1.6">
+  <model name="__SENSOR_NAME___box">
+    <pose>0 0 0.5 0 0 0</pose>
+    <link name="body">
+      <inertial>
+        /*=======================================TODO=======================================
+          Configure the initertial parameters
+          <mass>1.0</mass>
+          <inertia>
+            <ixx>0.01</ixx>
+            <iyy>0.01</iyy>
+            <izz>0.01</izz>
+          </inertia>
+        ====================================================================================*/
+      </inertial>
+
+      <collision name="collision">
+        <geometry>
+          /*=======================================TODO=======================================
+            Configure the geometry of the sensor for collisions
+            <box><size>0.2 0.2 0.2</size></box>
+          ====================================================================================*/
+        </geometry>
+      </collision>
+
+      <visual name="visual">
+        /*=======================================TODO=======================================
+          Configure the visual geometry and material of the sensor
+          <geometry>
+            <box><size>0.2 0.2 0.2</size></box>
+          </geometry>
+          <material>
+            <script>
+              <uri>file://media/materials/scripts/gazebo.material</uri>
+              <name>Gazebo/Blue</name>
+            </script>
+          </material>
+        ====================================================================================*/
+      </visual>
+
+      <sensor name="__SENSOR_NAME___sensor" type="__SENSOR_NAME__">
+        <always_on>true</always_on>
+        <update_rate>50</update_rate>
+        /*=======================================TODO=======================================
+          Configure the initertial pose of the sensor
+          <pose>0 0 0 0 0 0</pose>
+        ====================================================================================*/
+        <plugin name="__SENSOR_NAME___plugin" filename="lib__SENSOR_NAME___plugin.so">
+          /*=======================================TODO=======================================
+            Configure the Error model patameters of the sensor
+            Example <gyro_noise_stddev>2.3e-7</gyro_noise_stddev>
+          ====================================================================================*/
+        </plugin>
+      </sensor>
+    </link>
+  </model>
+</sdf>

@@ -1,0 +1,36 @@
+cmake_minimum_required(VERSION 3.8)
+project(__PKG_NAME__)
+
+find_package(ament_cmake REQUIRED)
+find_package(gazebo_dev REQUIRED)
+find_package(gazebo_ros REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(sensor_utils REQUIRED)
+
+include_directories(
+  include
+)
+
+add_library(__PKG_NAME__ SHARED
+  src/__PKG_NAME__.cpp
+)
+
+ament_target_dependencies(__PKG_NAME__
+  rclcpp
+  gazebo_ros
+  sensor_utils
+)
+
+target_link_libraries(__PKG_NAME__
+  ${GAZEBO_LIBRARIES}
+)
+
+install(TARGETS __PKG_NAME__
+  LIBRARY DESTINATION lib
+)
+
+install(DIRECTORY include/
+  DESTINATION include
+)
+
+ament_package()

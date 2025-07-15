@@ -1,0 +1,152 @@
+#include "__PKG_NAME__/__PKG_NAME__.hpp"
+#include <sensor_utils/noise_utils.hpp>
+#include <gazebo/sensors/Sensor.hh>
+#include <gazebo/sensors/SensorManager.hh>
+#include <iomanip> // std::setprecision
+#include <sstream>
+
+/*=======================================TODO=======================================
+  Use the Error model functions from sensor_utils
+  Example using sensor_utils::gaussian_noise;
+====================================================================================*/
+
+namespace __PKG_NAME__
+{
+  void __SOCKET_NAME__::Load(gazebo::sensors::SensorPtr sensor, sdf::ElementPtr sdf)
+// Claing resources: If the socket is open, it will be closed when the plugin is destroyed.
+  __SOCKET_NAME__::~__SOCKET_NAME__()
+  {
+    if (client_fd_ != -1)
+      close(client_fd_);
+    if (server_fd_ != -1)
+      close(server_fd_);
+
+    const char *SOCKET_PATH = "/tmp/__SENSOR_NAME___socket";
+    unlink(SOCKET_PATH);
+
+    if (ros_node_)
+      RCLCPP_INFO(ros_node_->get_logger(), "__SENSOR_NAME__ Plugin shutting down and removing socket.");
+  }
+
+  void __SOCKET_NAME__::Load(gazebo::sensors::SensorPtr _sensor, sdf::ElementPtr _sdf)
+  {
+    rng_ = std::mt19937(std::random_device{}());
+
+    /*=======================================TODO=======================================
+      Create sensor variable from Gazebo sensor_msgs
+      example: imu_sensor_ = std::dynamic_pointer_cast<gazebo::sensors::ImuSensor>(_sensor);
+    ====================================================================================*/
+    if (!__SENSOR_NAME___sensor_)
+    {
+      RCLCPP_ERROR(rclcpp::get_logger("__SOCKET_NAME__"), "Failed to cast to __SENSOR_NAME__Sensor");
+      return;
+    }
+
+    ros_node_ = gazebo_ros::Node::Get(_sdf, "__PKG_NAME___node");
+    /*=======================================TODO=======================================
+      Import parameters from SDF file
+      Example gyro_noise_stddev_ = _sdf->Get<double>("gyro_noise_stddev", 0.0).first;
+    ====================================================================================*/
+    
+    // Timer to publish
+    if (ros_node_)
+      update_timer_ = ros_node_->create_wall_timer(
+          std::chrono::milliseconds(50),
+          std::bind(&__SOCKET_NAME__::OnUpdate, this));
+
+    socket_thread_ = std::thread([this]()
+                                 {
+      if (initUnixSocketServer())
+        acceptUnixSocketClient(); });
+  }
+
+  bool __SOCKET_NAME__::initUnixSocketServer()
+  {
+    const char *SOCKET_PATH = "/tmp/__SENSOR_NAME___socket";
+    unlink(SOCKET_PATH);
+
+    server_fd_ = socket(AF_UNIX, SOCK_STREAM, 0);
+    if (server_fd_ < 0)
+    {
+      perror("socket");
+      return false;
+    }
+
+    memset(&socket_addr_, 0, sizeof(socket_addr_));
+    socket_addr_.sun_family = AF_UNIX;
+    strncpy(socket_addr_.sun_path, SOCKET_PATH, sizeof(socket_addr_.sun_path) - 1);
+
+    if (bind(server_fd_, (struct sockaddr *)&socket_addr_, sizeof(socket_addr_)) == -1)
+    {
+      perror("bind");
+      close(server_fd_);
+      server_fd_ = -1;
+      return false;
+    }
+
+    if (listen(server_fd_, 1) == -1)
+    {
+      perror("listen");
+      close(server_fd_);
+      server_fd_ = -1;
+      return false;
+    }
+
+    return true;
+  }
+
+  void __SOCKET_NAME__::acceptUnixSocketClient()
+  {
+    socklen_t addr_len = sizeof(socket_addr_);
+    client_fd_ = accept(server_fd_, (struct sockaddr *)&socket_addr_, &addr_len);
+    if (client_fd_ == -1)
+    {
+      perror("accept");
+      return;
+    }
+
+    socket_ready_ = true;
+    if (ros_node_)
+      RCLCPP_INFO(ros_node_->get_logger(), "__SENSOR_NAME__ socket client connected.");
+  }
+
+  void __SOCKET_NAME__::sendToSocketCSV(const ignition::math::Vector3d &acc, const ignition::math::Vector3d &gyro)
+  {
+    if (!socket_ready_)
+      return;
+
+    /*=======================================TODO=======================================
+      Codding the information like real sensor does
+      Example
+      std::ostringstream oss;
+      oss << std::fixed << std::setprecision(6)
+          << acc.X() << "\n";
+  
+      std::string msg = oss.str();
+      send(client_fd_, msg.c_str(), msg.size(), 0);
+    ====================================================================================*/
+  }
+
+  void __SOCKET_NAME__::OnUpdate()
+  {
+    if (!__SENSOR_NAME___sensor_)
+      return;
+
+    /*=======================================TODO=======================================
+      Transduction Stage: Connect to simulated __SENSOR_NAME__
+    ====================================================================================*/
+
+    /*=======================================TODO=======================================
+      Error model Stage: realistic imperfections effects
+    ====================================================================================*/
+
+    /*=======================================TODO=======================================
+      Codification Stage: Encoding to communication protocol
+    ====================================================================================*/
+    
+    // sendToSocketCSV(linear_acc, angular_vel);
+  }
+
+  GZ_REGISTER_SENSOR_PLUGIN(__SOCKET_NAME__)
+
+} // namespace __PKG_NAME__

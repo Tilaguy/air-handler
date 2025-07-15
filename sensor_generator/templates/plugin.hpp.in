@@ -1,0 +1,66 @@
+#ifndef __SENSOR_NAME_UPPER______SENSOR_NAME_UPPER___HPP_
+#define __SENSOR_NAME_UPPER______SENSOR_NAME_UPPER___HPP_
+
+#include <gazebo/common/Plugin.hh>
+#include <gazebo_ros/node.hpp>
+#include <rclcpp/rclcpp.hpp>
+#include <random>
+#include <fstream>
+#include <sys/socket.h>
+#include <sys/un.h>
+#include <unistd.h>
+#include <thread>
+/*=======================================TODO=======================================
+  Inculde corresponding sensor message from Gazebo sensor_msgs
+  example: #include <gazebo/sensors/ImuSensor.hh>
+====================================================================================*/
+
+namespace __PKG_NAME__
+{
+
+  class __SOCKET_NAME__ : public gazebo::SensorPlugin
+  {
+  public:
+    __SOCKET_NAME__() = default;
+    virtual ~__SOCKET_NAME__();
+
+    void Load(gazebo::sensors::SensorPtr _sensor, sdf::ElementPtr _sdf) override;
+
+  private:
+    void OnUpdate();
+
+    // Socket methods
+    bool initUnixSocketServer();
+    void acceptUnixSocketClient();
+    void sendToSocketCSV(const ignition::math::Vector3d &acc, const ignition::math::Vector3d &gyro);
+
+    // Sensor and ROS objects
+    /*=======================================TODO=======================================
+      Create variable from Gazebo sensor_msgs
+      example: gazebo::sensors::ImuSensorPtr <SENSOR_NAME>_sensor_;
+    ====================================================================================*/
+    gazebo_ros::Node::SharedPtr ros_node_;
+    rclcpp::TimerBase::SharedPtr update_timer_;
+
+
+    std::mt19937 rng_;
+    /*=======================================TODO=======================================
+      Initialize Error model variables
+      example: double gyro_noise_stddev_ = 0.01;
+    ====================================================================================*/
+
+    double bias_acum = 0.0;
+    double prev_val = 0.0;
+    int prev_direction = 0;
+
+    // Socket communication
+    int server_fd_ = -1;
+    int client_fd_ = -1;
+    struct sockaddr_un socket_addr_;
+    std::thread socket_thread_;
+    bool socket_ready_ = false;
+  };
+
+} // namespace __PKG_NAME__
+
+#endif // __SENSOR_NAME_UPPER______SENSOR_NAME_UPPER___HPP_
