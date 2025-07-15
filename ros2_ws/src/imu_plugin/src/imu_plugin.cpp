@@ -1,4 +1,3 @@
-// imu_plugin.cpp (parte por parte con sockets CSV)
 #include "imu_plugin/imu_plugin.hpp"
 
 #include <gazebo/sensors/Sensor.hh>
@@ -11,7 +10,7 @@ using sensor_utils::gaussian_noise;
 #include <iomanip> // std::setprecision
 #include <sstream>
 
-namespace gazebo_plugins
+namespace imu_plugin
 {
 
   // Claing resources: If the socket is open, it will be closed when the plugin is destroyed.
@@ -65,7 +64,7 @@ namespace gazebo_plugins
   bool ImuPlugin::initUnixSocketServer()
   {
     const char *SOCKET_PATH = "/tmp/imu_socket";
-    unlink(SOCKET_PATH); // eliminar si ya existe
+    unlink(SOCKET_PATH);
 
     server_fd_ = socket(AF_UNIX, SOCK_STREAM, 0);
     if (server_fd_ < 0)
@@ -175,4 +174,4 @@ namespace gazebo_plugins
 
   GZ_REGISTER_SENSOR_PLUGIN(ImuPlugin)
 
-} // namespace gazebo_plugins
+} // namespace imu_plugin

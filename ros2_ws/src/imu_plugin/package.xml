@@ -4,7 +4,7 @@
   <version>0.1.0</version>
   <description>Custom IMU plugin for Gazebo using ROS 2</description>
 
-  <maintainer email="you@example.com">Your Name</maintainer>
+  <maintainer email="sebastian.tilaguy@gmail.com">Sebastian</maintainer>
   <license>MIT</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>

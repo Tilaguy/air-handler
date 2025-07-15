@@ -14,7 +14,7 @@
 #include <unistd.h>
 #include <thread>
 
-namespace gazebo_plugins
+namespace imu_plugin
 {
 
   class ImuPlugin : public gazebo::SensorPlugin
@@ -58,6 +58,6 @@ namespace gazebo_plugins
     bool socket_ready_ = false;
   };
 
-} // namespace gazebo_plugins
+} // namespace imu_plugin
 
 #endif // IMU_PLUGIN__IMU_PLUGIN_HPP_
