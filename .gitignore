@@ -23,7 +23,12 @@ Makefile
 *~
 *.bak
 .DS_Store
-/logs/
+ros2_ws/logs/
 
 # Docker local env
 docker/.env
+
+# step files
+*.step
+*.STEP
+*.stp

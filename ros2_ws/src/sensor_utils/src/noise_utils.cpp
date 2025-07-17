@@ -20,9 +20,9 @@ namespace sensor_utils
     return value;
   }
 
-  double gaussian_drift(double current_val, double &bias_acum)
+  double gaussian_drift(double current_val, double stddev, double &bias_acum)
   {
-    double bias = gaussian_noise(1e-5); // dummy stddev
+    double bias = gaussian_noise(stddev);
     double output_val = current_val + bias_acum;
     bias_acum += std::abs(bias);
     return output_val;
@@ -35,6 +35,13 @@ namespace sensor_utils
     prev_val = current_val;
     prev_direction = current_direction;
     return output_val;
+  }
+
+  double quantize(double value, double resolution)
+  {
+    if (resolution <= 0.0)
+      return value;
+    return std::round(value / resolution) * resolution;
   }
 
 } // namespace sensor_utils
