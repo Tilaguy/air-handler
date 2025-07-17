@@ -30,12 +30,24 @@ namespace imu_plugin
     // Socket methods
     bool initUnixSocketServer();
     void acceptUnixSocketClient();
-    void sendToSocketCSV(const ignition::math::Vector3d &acc, const ignition::math::Vector3d &gyro);
+    void sendToSocket(const ignition::math::Vector3d &acc, const ignition::math::Vector3d &gyro);
 
     // Sensor and ROS objects
     gazebo::sensors::ImuSensorPtr imu_sensor_;
     gazebo_ros::Node::SharedPtr ros_node_;
     rclcpp::TimerBase::SharedPtr update_timer_;
+
+    struct ImuPacket
+    {
+      uint8_t header = 0xA5;
+      int16_t acc_x; // acceleration in mg
+      int16_t acc_y;
+      int16_t acc_z;
+      int16_t gyro_x; // Angular velocity in mdps
+      int16_t gyro_y;
+      int16_t gyro_z;
+      uint8_t checksum;
+    };
 
     // Noise generator
     std::mt19937 rng_;

@@ -115,18 +115,35 @@ namespace imu_plugin
     RCLCPP_INFO(ros_node_->get_logger(), "IMU socket client connected.");
   }
 
-  void ImuPlugin::sendToSocketCSV(const ignition::math::Vector3d &acc, const ignition::math::Vector3d &gyro)
+  void ImuPlugin::sendToSocket(const ignition::math::Vector3d &acc, const ignition::math::Vector3d &gyro)
   {
     if (!socket_ready_)
       return;
 
-    std::ostringstream oss;
-    oss << std::fixed << std::setprecision(6)
-        << acc.X() << "," << acc.Y() << "," << acc.Z() << ","
-        << gyro.X() << "," << gyro.Y() << "," << gyro.Z() << "\n";
+    int16_t acc_x_raw = static_cast<int16_t>(acc.X());
+    int16_t acc_y_raw = static_cast<int16_t>(acc.Y());
+    int16_t acc_z_raw = static_cast<int16_t>(acc.Z());
+    int16_t gyro_x_raw = static_cast<int16_t>(gyro.X());
+    int16_t gyro_y_raw = static_cast<int16_t>(gyro.Y());
+    int16_t gyro_z_raw = static_cast<int16_t>(gyro.Z());
 
-    std::string msg = oss.str();
-    send(client_fd_, msg.c_str(), msg.size(), 0);
+    uint8_t buffer[15];
+    buffer[0] = 0xA5; // header
+    memcpy(&buffer[1], &acc_x_raw, sizeof(int16_t));
+    memcpy(&buffer[3], &acc_y_raw, sizeof(int16_t));
+    memcpy(&buffer[5], &acc_z_raw, sizeof(int16_t));
+    memcpy(&buffer[7], &gyro_x_raw, sizeof(int16_t));
+    memcpy(&buffer[9], &gyro_y_raw, sizeof(int16_t));
+    memcpy(&buffer[11], &gyro_z_raw, sizeof(int16_t));
+
+    // Simplehe cksum (XOR of every bytes except the last one)
+    uint8_t checksum = 0;
+    for (int i = 0; i < 13; ++i)
+      checksum ^= buffer[i];
+    buffer[13] = checksum;
+
+    // Send by socket
+    send(client_fd_, buffer, sizeof(buffer), 0);
   }
 
   void ImuPlugin::OnUpdate()
@@ -172,7 +189,7 @@ namespace imu_plugin
     /*=======================================================
       Codification Stage: Encoding to communication protocol
       =======================================================*/
-    sendToSocketCSV(linear_acc, angular_vel);
+    sendToSocket(linear_acc, angular_vel);
   }
 
   GZ_REGISTER_SENSOR_PLUGIN(ImuPlugin)
