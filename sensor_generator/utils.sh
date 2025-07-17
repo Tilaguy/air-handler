@@ -36,6 +36,8 @@ create_directories() {
   mkdir -p "$PKG_DIR/include/${PKG_NAME}"
   mkdir -p "$PKG_DIR/src"
   mkdir -p "$PKG_DIR/models"
+  mkdir -p "$PKG_DIR/models/${SENSOR_NAME}_box"
+  mkdir -p "$PKG_DIR/models/${SENSOR_NAME}_box/meshes"
   mkdir -p "${WORKSPACE}/src/sensor_sim/launch"
   mkdir -p "${WORKSPACE}/src/sensor_sim/worlds"
 }

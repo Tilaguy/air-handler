@@ -25,18 +25,15 @@
       </collision>
 
       <visual name="visual">
+        <geometry>
+          <mesh>
         /*=======================================TODO=======================================
-          Configure the visual geometry and material of the sensor
-          <geometry>
-            <box><size>0.2 0.2 0.2</size></box>
-          </geometry>
-          <material>
-            <script>
-              <uri>file://media/materials/scripts/gazebo.material</uri>
-              <name>Gazebo/Blue</name>
-            </script>
-          </material>
+          Configure the visual geometry from mesh of sensor
+          <uri>model:./meshes/[sensor_reference].dae</uri>
+          <scale>1 1 1</scale>
         ====================================================================================*/
+          </mesh>
+        </geometry>
       </visual>
 
       <sensor name="__SENSOR_NAME___sensor" type="__SENSOR_NAME__">
