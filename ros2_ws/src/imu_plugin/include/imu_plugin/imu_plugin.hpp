@@ -6,7 +6,6 @@
 #include <gazebo/sensors/ImuSensor.hh>
 #include <gazebo_ros/node.hpp>
 #include <rclcpp/rclcpp.hpp>
-#include <sensor_msgs/msg/imu.hpp>
 #include <random>
 #include <fstream>
 #include <sys/socket.h>
@@ -36,17 +35,21 @@ namespace imu_plugin
     // Sensor and ROS objects
     gazebo::sensors::ImuSensorPtr imu_sensor_;
     gazebo_ros::Node::SharedPtr ros_node_;
-    rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr imu_pub_;
     rclcpp::TimerBase::SharedPtr update_timer_;
 
     // Noise generator
     std::mt19937 rng_;
-    double gyro_noise_stddev_ = 0.01;
-    double accel_noise_stddev_ = 0.1;
-    double bias_drift_stddev_ = 0.001;
-    double hysteresis_width_ = 0.01;
+    double gyro_noise_stddev_ = 0.0;
+    double gyro_lim_ = 0.0;
+    double gyro_drift_stddev_ = 0.0;
+    double gyro_resolution_ = 0.0;
+    double accel_noise_stddev_ = 0.0;
+    double accel_lim_ = 0.0;
+    double accel_drift_stddev_ = 0.0;
+    double accel_resolution_ = 0.0;
 
-    double bias_acum = 0.0;
+    double gyro_bias_acum = 0.0;
+    double accel_bias_acum = 0.0;
     double prev_val = 0.0;
     int prev_direction = 0;
 

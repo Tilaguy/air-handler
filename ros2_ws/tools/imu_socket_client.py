@@ -55,6 +55,9 @@ for ax in axs:
     ax.legend()
     ax.grid()
 
+axs[0].set_ylim(-80, 80)
+axs[1].set_ylim(-20, 20)
+
 def animate(i):
     data = sock_file.readline()
     if not data:
@@ -89,15 +92,9 @@ def animate(i):
             f.write(data)
 
     except Exception as e:
-        print("[ERROR]", e)
+        print("[ERROR]", e)    
 
-# Setup: establecer límites al inicio
-for ax in axs:
-    ax.set_xlim(0, max_points)
-    ax.set_ylim(-10, 10)  # Puedes ajustar a valores esperados
-    ax.grid()
-
-ani = animation.FuncAnimation(fig, animate, interval=50)
+ani = animation.FuncAnimation(fig, animate, interval=10)
 
 print(f"[INFO] Logging to {csv_file_path}")
 print("[INFO] Press Ctrl+C to stop")

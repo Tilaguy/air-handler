@@ -2,10 +2,12 @@
 
 #include <gazebo/sensors/Sensor.hh>
 #include <gazebo/sensors/SensorManager.hh>
-#include <sensor_msgs/msg/imu.hpp>
 
 #include "sensor_utils/noise_utils.hpp"
+using sensor_utils::clipping_values;
+using sensor_utils::gaussian_drift;
 using sensor_utils::gaussian_noise;
+using sensor_utils::quantize;
 
 #include <iomanip> // std::setprecision
 #include <sstream>
@@ -41,13 +43,16 @@ namespace imu_plugin
 
     // ROS node and publisher
     ros_node_ = gazebo_ros::Node::Get(_sdf, "imu_plugin_node");
-    imu_pub_ = ros_node_->create_publisher<sensor_msgs::msg::Imu>("imu/data", 10);
 
     // Import parameters from SDF
     gyro_noise_stddev_ = _sdf->Get<double>("gyro_noise_stddev", 0.0).first;
+    gyro_lim_ = _sdf->Get<double>("gyro_lim", 0.0).first;
+    gyro_drift_stddev_ = _sdf->Get<double>("gyro_drift_stddev", 0.0).first;
+    gyro_resolution_ = _sdf->Get<double>("gyro_resolution", 0.0).first;
     accel_noise_stddev_ = _sdf->Get<double>("accel_noise_stddev", 0.0).first;
-    bias_drift_stddev_ = _sdf->Get<double>("bias_drift_stddev", 0.0).first;
-    hysteresis_width_ = _sdf->Get<double>("hysteresis_width", 0.0).first;
+    accel_lim_ = _sdf->Get<double>("accel_lim", 0.0).first;
+    accel_drift_stddev_ = _sdf->Get<double>("accel_drift_stddev", 0.0).first;
+    accel_resolution_ = _sdf->Get<double>("accel_resolution", 0.0).first;
 
     // Timer to publish
     update_timer_ = ros_node_->create_wall_timer(
@@ -129,46 +134,44 @@ namespace imu_plugin
     if (!imu_sensor_)
       return;
 
-    auto imu_msg = sensor_msgs::msg::Imu();
-
     /*=============================================
       Transduction Stage: Connect to simulated IMU
       =============================================*/
     ignition::math::Vector3d linear_acc = imu_sensor_->LinearAcceleration();
     ignition::math::Vector3d angular_vel = imu_sensor_->AngularVelocity();
-    ignition::math::Quaterniond orientation = imu_sensor_->Orientation();
 
     /*===================================================
       Error model Stage: realistic imperfections effects
       ===================================================*/
+    angular_vel.X() += gaussian_noise(gyro_noise_stddev_);
+    angular_vel.Y() += gaussian_noise(gyro_noise_stddev_);
+    angular_vel.Z() += gaussian_noise(gyro_noise_stddev_);
+    angular_vel.X() = clipping_values(angular_vel.X(), gyro_lim_, -gyro_lim_);
+    angular_vel.Y() = clipping_values(angular_vel.Y(), gyro_lim_, -gyro_lim_);
+    angular_vel.Z() = clipping_values(angular_vel.Z(), gyro_lim_, -gyro_lim_);
+    angular_vel.X() = gaussian_drift(angular_vel.X(), gyro_drift_stddev_, gyro_bias_acum);
+    angular_vel.Y() = gaussian_drift(angular_vel.Y(), gyro_drift_stddev_, gyro_bias_acum);
+    angular_vel.Z() = gaussian_drift(angular_vel.Z(), gyro_drift_stddev_, gyro_bias_acum);
+    angular_vel.X() = quantize(angular_vel.X(), gyro_resolution_);
+    angular_vel.Y() = quantize(angular_vel.Y(), gyro_resolution_);
+    angular_vel.Z() = quantize(angular_vel.Z(), gyro_resolution_);
+
     linear_acc.X() += gaussian_noise(accel_noise_stddev_);
     linear_acc.Y() += gaussian_noise(accel_noise_stddev_);
     linear_acc.Z() += gaussian_noise(accel_noise_stddev_);
-    // Uncomment for more realistic effects:
-    // angular_vel.X() = clipping_values(angular_vel.X(), 10.0, -10.0);
-    // angular_vel.X() = gaussian_drift(angular_vel.X(), bias_acum);
-    // linear_acc.X() = hysteresis(linear_acc.X(), prev_val, prev_direction);
+    linear_acc.X() = clipping_values(linear_acc.X(), accel_lim_, -accel_lim_);
+    linear_acc.Y() = clipping_values(linear_acc.Y(), accel_lim_, -accel_lim_);
+    linear_acc.Z() = clipping_values(linear_acc.Z(), accel_lim_, -accel_lim_);
+    linear_acc.X() = gaussian_drift(linear_acc.X(), accel_drift_stddev_, accel_bias_acum);
+    linear_acc.Y() = gaussian_drift(linear_acc.Y(), accel_drift_stddev_, accel_bias_acum);
+    linear_acc.Z() = gaussian_drift(linear_acc.Z(), accel_drift_stddev_, accel_bias_acum);
+    linear_acc.X() = quantize(linear_acc.X(), accel_resolution_);
+    linear_acc.Y() = quantize(linear_acc.Y(), accel_resolution_);
+    linear_acc.Z() = quantize(linear_acc.Z(), accel_resolution_);
 
     /*=======================================================
       Codification Stage: Encoding to communication protocol
       =======================================================*/
-    imu_msg.header.stamp = ros_node_->get_clock()->now();
-    imu_msg.header.frame_id = "imu_link";
-
-    imu_msg.linear_acceleration.x = linear_acc.X();
-    imu_msg.linear_acceleration.y = linear_acc.Y();
-    imu_msg.linear_acceleration.z = linear_acc.Z();
-
-    imu_msg.angular_velocity.x = angular_vel.X();
-    imu_msg.angular_velocity.y = angular_vel.Y();
-    imu_msg.angular_velocity.z = angular_vel.Z();
-
-    imu_msg.orientation.x = orientation.X();
-    imu_msg.orientation.y = orientation.Y();
-    imu_msg.orientation.z = orientation.Z();
-    imu_msg.orientation.w = orientation.W();
-
-    imu_pub_->publish(imu_msg);
     sendToSocketCSV(linear_acc, angular_vel);
   }
 
