@@ -6,14 +6,10 @@
       <uri>model://ground_plane</uri>
     </include>
 
-    <!-- Begin import each sensor box -->
+    <!-- Import sensor box -->
     <include>
       <uri>model://force_box</uri>
     </include>
-    <include>
-      <uri>model://imu_box</uri>
-    </include>
-    <!-- End import each sensor box -->
 
     <!-- Plugin para inicializar ROS 2 -->
     <plugin name="gazebo_ros_init" filename="libgazebo_ros_init.so">

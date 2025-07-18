@@ -1,5 +1,5 @@
-#ifndef __SENSOR_NAME_UPPER______SENSOR_NAME_UPPER___HPP_
-#define __SENSOR_NAME_UPPER______SENSOR_NAME_UPPER___HPP_
+#ifndef FORCE_PLUGIN__FORCE_PLUGIN_HPP_
+#define FORCE_PLUGIN__FORCE_PLUGIN_HPP_
 
 #include <gazebo/common/Plugin.hh>
 #include <gazebo_ros/node.hpp>
@@ -10,19 +10,19 @@
 #include <sys/un.h>
 #include <unistd.h>
 #include <thread>
-/*=======================================TODO=======================================
+/*==================================================================================
   Inculde corresponding sensor message from Gazebo sensor_msgs
-  example: #include <gazebo/sensors/ImuSensor.hh>
 ====================================================================================*/
+#include <gazebo/sensors/ForceTorqueSensor.hh>
 
-namespace __PKG_NAME__
+namespace force_plugin
 {
 
-  class __SOCKET_NAME__ : public gazebo::SensorPlugin
+  class ForcePlugin : public gazebo::SensorPlugin
   {
   public:
-    __SOCKET_NAME__() = default;
-    virtual ~__SOCKET_NAME__();
+    ForcePlugin() = default;
+    virtual ~ForcePlugin();
 
     void Load(gazebo::sensors::SensorPtr _sensor, sdf::ElementPtr _sdf) override;
 
@@ -32,22 +32,26 @@ namespace __PKG_NAME__
     // Socket methods
     bool initUnixSocketServer();
     void acceptUnixSocketClient();
-    void sendToSocket(const ignition::math::Vector3d &acc, const ignition::math::Vector3d &gyro);
+    void sendToSocket(const double &force);
 
     // Sensor and ROS objects
-    /*=======================================TODO=======================================
+    /*==================================================================================
       Create variable from Gazebo sensor_msgs
-      example: gazebo::sensors::ImuSensorPtr <SENSOR_NAME>_sensor_;
     ====================================================================================*/
+    gazebo::sensors::ForceTorqueSensorPtr force_sensor_;
     gazebo_ros::Node::SharedPtr ros_node_;
     rclcpp::TimerBase::SharedPtr update_timer_;
 
-
     std::mt19937 rng_;
-    /*=======================================TODO=======================================
+    /*==================================================================================
       Initialize Error model variables
-      example: double gyro_noise_stddev_ = 0.01;
     ====================================================================================*/
+    double noise_stddev_ = 0;
+    double min_lin_force_ = 0;
+    double max_lin_force_ = 0;
+    double min_force_ = 0;
+    double max_force_ = 0;
+    double resolution_ = 0;
 
     double bias_acum = 0.0;
     double prev_val = 0.0;
@@ -61,6 +65,6 @@ namespace __PKG_NAME__
     bool socket_ready_ = false;
   };
 
-} // namespace __PKG_NAME__
+} // namespace force_plugin
 
-#endif // __SENSOR_NAME_UPPER______SENSOR_NAME_UPPER___HPP_
+#endif // FORCE_PLUGIN__FORCE_PLUGIN_HPP_

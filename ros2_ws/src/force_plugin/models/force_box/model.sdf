@@ -1,0 +1,54 @@
+<?xml version="1.0" ?>
+<sdf version="1.6">
+  <model name="force_box">
+    <pose>-0.005 -0.006 0 0 0 0</pose>
+    <link name="body">
+      <inertial>
+        <mass>0.3e-6</mass>
+        <inertia>
+          <ixx>0.01</ixx>
+          <iyy>0.01</iyy>
+          <izz>0.01</izz>
+        </inertia>
+      </inertial>
+
+      <collision name="collision">
+        <geometry>
+          <mesh>
+            /*==================================================================================
+              Configure the visual geometry from mesh of sensor
+            ====================================================================================*/
+            <uri>model://force_box/meshes/FMAMSDXX015WC2C3.dae</uri>
+            <scale>1 1 1</scale>
+          </mesh>
+        </geometry>
+      </collision>
+
+      <visual name="visual">
+        <geometry>
+          <mesh>
+            <uri>model://force_box/meshes/FMAMSDXX015WC2C3.dae</uri>
+            <scale>1 1 1</scale>
+          </mesh>
+        </geometry>
+      </visual>
+
+      <sensor name="force_sensor" type="force_torque">
+        <always_on>true</always_on>
+        <update_rate>50</update_rate>
+        <pose>0.0051 0.0056 0.002543 0 0 0</pose>
+        <plugin name="force_plugin" filename="libforce_plugin.so">
+          /*==================================================================================
+            Configure the Error model patameters of the sensor FMAMSDXX015WC2C3
+          ====================================================================================*/
+          <noise_stddev>0.03</noise_stddev>
+          <min_lin_force>3</min_lin_force>
+          <max_lin_force>12</max_lin_force>
+          <min_force>0</min_force>
+          <max_force>15</max_force>
+          <resolution>0.0037</resolution>
+        </plugin>
+      </sensor>
+    </link>
+  </model>
+</sdf>
