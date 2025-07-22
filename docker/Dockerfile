@@ -43,5 +43,8 @@ WORKDIR /ros2_ws
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
+# Enviroment variables
+COPY ros2_env.sh /ros2_env.sh
+
 ENTRYPOINT ["/entrypoint.sh"]
 CMD ["bash"]

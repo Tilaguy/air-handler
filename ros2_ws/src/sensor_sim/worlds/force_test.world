@@ -11,11 +11,12 @@
       <uri>model://force_box</uri>
     </include>
 
-    <!-- Plugin para inicializar ROS 2 -->
+    <!-- Plugin para inicializar ROS 2
     <plugin name="gazebo_ros_init" filename="libgazebo_ros_init.so">
       <ros>
         <namespace>/</namespace>
       </ros>
     </plugin>
+    -->
   </world>
 </sdf>

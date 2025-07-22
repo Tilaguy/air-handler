@@ -32,7 +32,8 @@ namespace force_plugin
     // Socket methods
     bool initUnixSocketServer();
     void acceptUnixSocketClient();
-    void sendToSocket(const double &force);
+    void handleClientRequest();
+    void sendToSocket();
 
     // Sensor and ROS objects
     /*==================================================================================
@@ -46,12 +47,14 @@ namespace force_plugin
     /*==================================================================================
       Initialize Error model variables
     ====================================================================================*/
-    double noise_stddev_ = 0;
-    double min_lin_force_ = 0;
-    double max_lin_force_ = 0;
-    double min_force_ = 0;
-    double max_force_ = 0;
-    double resolution_ = 0;
+    double noise_stddev_ = 0.0;
+    double min_lin_force_ = 0.0;
+    double max_lin_force_ = 0.0;
+    double min_force_ = 0.0;
+    double max_force_ = 0.0;
+    double resolution_ = 0.0;
+
+    double perpendicular_force_ = 0.0;
 
     double bias_acum = 0.0;
     double prev_val = 0.0;
@@ -63,6 +66,7 @@ namespace force_plugin
     struct sockaddr_un socket_addr_;
     std::thread socket_thread_;
     bool socket_ready_ = false;
+    std::thread request_thread_;
   };
 
 } // namespace force_plugin

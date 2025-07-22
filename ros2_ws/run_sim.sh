@@ -52,16 +52,6 @@ fi
 echo "[INFO] Sourcing environment..."
 source /ros2_ws/install/setup.bash
 
-# ------------------------------
-# Setup GAZEBO_MODEL_PATH from all *_plugin/model directories
-# ------------------------------
-GAZEBO_MODEL_PATH_DEFAULT="/usr/share/gazebo-11/models"
-MODEL_PATHS=$(find /ros2_ws/src -maxdepth 3 -type d -name models)
-GAZEBO_MODEL_PATH_COMBINED=$(echo "$MODEL_PATHS" | tr '\n' ':')
-
-export GAZEBO_MODEL_PATH="$GAZEBO_MODEL_PATH_COMBINED:$GAZEBO_MODEL_PATH_DEFAULT"
-echo "[INFO] GAZEBO_MODEL_PATH set to: $GAZEBO_MODEL_PATH"
-
 # Check if the launch file exists in the specified package
 LAUNCH_PATH="/ros2_ws/src/$SIM_PKG/launch/$LAUNCH_FILE"
 if [ ! -f "$LAUNCH_PATH" ] && [ "$PLUGIN" != "all" ]; then

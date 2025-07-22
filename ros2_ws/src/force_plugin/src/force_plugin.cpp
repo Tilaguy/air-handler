@@ -17,10 +17,14 @@ namespace force_plugin
   // Claing resources: If the socket is open, it will be closed when the plugin is destroyed.
   ForcePlugin::~ForcePlugin()
   {
+    socket_ready_ = false;
+
     if (client_fd_ != -1)
       close(client_fd_);
     if (server_fd_ != -1)
       close(server_fd_);
+    if (request_thread_.joinable())
+      request_thread_.join();
 
     const char *SOCKET_PATH = "/tmp/force_socket";
     unlink(SOCKET_PATH);
@@ -114,23 +118,57 @@ namespace force_plugin
     socket_ready_ = true;
     if (ros_node_)
       RCLCPP_INFO(ros_node_->get_logger(), "force socket client connected.");
+
+    request_thread_ = std::thread(&ForcePlugin::handleClientRequest, this);
   }
 
-  void ForcePlugin::sendToSocket(const double &force)
+  void ForcePlugin::handleClientRequest()
+  {
+    while (true)
+    {
+      uint8_t request;
+      ssize_t bytes_received = recv(client_fd_, &request, sizeof(request), 0);
+
+      if (bytes_received <= 0)
+      {
+        perror("recv");
+        RCLCPP_WARN(ros_node_->get_logger(), "Client disconnected or socket error.");
+        socket_ready_ = false;
+        break;
+      }
+
+      switch (request)
+      {
+      case 0x28:
+        sendToSocket();
+        break;
+      default:
+        RCLCPP_WARN(ros_node_->get_logger(), "Unknown command received: 0x%02X", request);
+      }
+    }
+  }
+
+  void ForcePlugin::sendToSocket()
   {
     if (!socket_ready_)
       return;
 
-    /*=======================================TODO=======================================
+    /*==================================================================================
       Codding the information like real sensor does
-      Example
-      std::ostringstream oss;
-      oss << std::fixed << std::setprecision(6)
-          << acc.X() << "\n";
-
-      std::string msg = oss.str();
-      send(client_fd_, msg.c_str(), msg.size(), 0);
     ====================================================================================*/
+    uint16_t output_min = static_cast<uint16_t>(16384 * 0.1f);
+    uint16_t output_max = static_cast<uint16_t>(16384 * 0.9f);
+
+    uint16_t digital_output = static_cast<uint16_t>(
+        ((perpendicular_force_ / max_force_) * (output_max - output_min)) + output_min);
+
+    uint8_t status_bits = 0b00 << 6;
+
+    uint8_t byte1 = status_bits | ((digital_output >> 8) & 0x3F); // bits 13–8
+    uint8_t byte2 = digital_output & 0xFF;
+
+    uint8_t buffer[2] = {byte1, byte2};
+    send(client_fd_, buffer, sizeof(buffer), 0);
   }
 
   void ForcePlugin::OnUpdate()
@@ -142,27 +180,28 @@ namespace force_plugin
       Transduction Stage: Connect to simulated force
     ====================================================================================*/
     ignition::math::Vector3d force = force_sensor_->Force();
-    double perpendicular_force = std::abs(force.Z());
+    RCLCPP_WARN(ros_node_->get_logger(), "%0.1f, %0.1f, %0.1f", force.X(), force.Y(), force.Z());
+    perpendicular_force_ = std::abs(force.Z());
 
     /*==================================================================================
       Error model Stage: realistic imperfections effects
     ====================================================================================*/
-    perpendicular_force += gaussian_noise(noise_stddev_);
-    perpendicular_force = clipping_values(perpendicular_force, max_force_, min_force_);
+    perpendicular_force_ += gaussian_noise(noise_stddev_);
+    perpendicular_force_ = clipping_values(perpendicular_force_, max_force_, min_force_);
     // Non-lienar zone
-    if (perpendicular_force < min_lin_force_ || perpendicular_force > max_lin_force_)
+    if (perpendicular_force_ < min_lin_force_ || perpendicular_force_ > max_lin_force_)
     {
       // add more noise
-      perpendicular_force += gaussian_noise(5.0 * noise_stddev_);
+      perpendicular_force_ += gaussian_noise(5.0 * noise_stddev_);
       // add non-linearty -> 0.02X²
-      perpendicular_force = perpendicular_force * perpendicular_force * 0.02f;
+      perpendicular_force_ = perpendicular_force_ * perpendicular_force_ * 0.02f;
     }
-    perpendicular_force = quantize(perpendicular_force, resolution_);
+    perpendicular_force_ = quantize(perpendicular_force_, resolution_);
 
-    /*=======================================TODO=======================================
+    /*==================================================================================
       Codification Stage: Encoding to communication protocol
     ====================================================================================*/
-    sendToSocket(perpendicular_force);
+    // sendToSocket(perpendicular_force_);
   }
 
   GZ_REGISTER_SENSOR_PLUGIN(ForcePlugin)
