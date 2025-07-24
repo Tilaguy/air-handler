@@ -1,5 +1,5 @@
 #!/bin/bash
 clear
-echo "🔧 Construyendo la imagen Docker..."
+echo "🔧 Building the Docker image..."
 sleep 1.5
 docker compose build

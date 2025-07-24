@@ -1,6 +1,6 @@
 #!/bin/bash
 clear
-echo "🚀 Iniciando el contenedor del simulador..."
+echo "🚀 Starting the simulator container..."
 xhost +local:root
 docker compose down --remove-orphans
 docker compose up

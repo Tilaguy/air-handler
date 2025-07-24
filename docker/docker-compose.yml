@@ -1,3 +1,5 @@
+version: "3.8"
+
 services:
   dev:
     build: 
@@ -16,3 +18,11 @@ services:
     network_mode: host
     tty: true
     stdin_open: true
+
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]

@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-# Build workspace only if 'install' folder is missing
+# Build workspace if needed
 if [ -d /ros2_ws/src ] && [ "$(ls -A /ros2_ws/src)" ]; then
   if [ ! -d /ros2_ws/install ]; then
     echo "[ENTRYPOINT] Building workspace (install/ not found)..."
@@ -16,7 +16,13 @@ export DISPLAY=${DISPLAY:-:0}
 export QT_X11_NO_MITSHM=1
 xhost +local:root 2>/dev/null || true
 
-echo "source /ros2_env.sh" >> ~/.bashrc
+# Add ros2_env sourcing to bashrc only if not already present
+if ! grep -Fxq "source /ros2_env.sh" ~/.bashrc; then
+    echo "source /ros2_env.sh" >> ~/.bashrc
+fi
 
+# Source environment now
+source /ros2_env.sh
+
+# Execute CMD
 exec "$@"
-

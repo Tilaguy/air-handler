@@ -1,54 +1,72 @@
-FROM ubuntu:22.04
+# ================================
+# Dockerfile: ROS 2 Humble + Gazebo Fortress + OpenGL Debug Tools
+# ================================
 
+# Use official ROS 2 Humble desktop image as base
+FROM osrf/ros:humble-desktop-full
+
+# Metadata
+LABEL maintainer="tu@email.com"
+LABEL version="1.3"
+LABEL description="ROS 2 Humble + Gazebo Fortress + OpenGL debug tools"
+
+# Environment variables
 ENV DEBIAN_FRONTEND=noninteractive
-ENV LANG=C.UTF-8 LC_ALL=C.UTF-8
+ENV LANG=C.UTF-8
+ENV LC_ALL=C.UTF-8
 
-# Base tools
-RUN apt-get update && apt-get install -y \
-    locales curl tree gnupg lsb-release wget git \
-    build-essential cmake python3-pip \
-    && locale-gen en_US.UTF-8 && update-locale \
+# Install basic dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    gnupg \
+    lsb-release \
+    wget \
+    git \
     && rm -rf /var/lib/apt/lists/*
 
-# 1. Install ROS 2 Humble
-RUN curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key | gpg --dearmor -o /usr/share/keyrings/ros-archive-keyring.gpg && \
-    echo "deb [arch=amd64 signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu jammy main" \
-    > /etc/apt/sources.list.d/ros2.list && \
-    apt-get update && apt-get install -y \
-    ros-humble-desktop \
-    python3-ament-package \
-    ros-humble-rosidl-typesupport-c \
+# Add OSRF repository for Gazebo Fortress
+RUN wget https://packages.osrfoundation.org/gazebo.gpg -O /usr/share/keyrings/gazebo-archive-keyring.gpg \
+    && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/gazebo-archive-keyring.gpg] http://packages.osrfoundation.org/gazebo/ubuntu-stable $(lsb_release -cs) main" \
+    > /etc/apt/sources.list.d/gazebo-stable.list
+
+# Install Gazebo Fortress (new naming scheme gz-*)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gz-fortress \
     && rm -rf /var/lib/apt/lists/*
 
-# 2. Install Ignition Fortress (v7) and its dependencies
-RUN curl -sSL https://packages.osrfoundation.org/gazebo.key | gpg --dearmor -o /usr/share/keyrings/gazebo-archive-keyring.gpg && \
-    echo "deb [arch=amd64 signed-by=/usr/share/keyrings/gazebo-archive-keyring.gpg] https://packages.osrfoundation.org/gazebo/ubuntu-stable jammy main" \
-    > /etc/apt/sources.list.d/gazebo-stable.list && \
-    apt-get update && apt-get install -y \
-    ignition-fortress \
-    libignition-gazebo7-dev \
-    libignition-math7-dev \
-    libignition-msgs9-dev \
-    libignition-transport12-dev \
-    libignition-common5-dev \
-    libignition-fuel-tools8-dev \
-    ros-humble-ros-ign-bridge \
-    ros-humble-ros-ign-gazebo \
-    ros-humble-ros-ign-interfaces \
+# Install ROS 2 Gazebo bridge packages
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ros-humble-gazebo-ros-pkgs \
+    ros-humble-gazebo-ros \
+    ros-humble-gazebo-plugins \
+    ros-humble-gazebo-msgs \
+    ros-humble-gazebo-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# 3. ROS developing tools
-RUN pip3 install -U colcon-common-extensions vcstool rosdep pytest
+# === OpenGL & Debugging tools ===
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    mesa-utils \
+    libgl1-mesa-dri \
+    libgl1-mesa-glx \
+    libegl1-mesa \
+    && rm -rf /var/lib/apt/lists/*
 
-# 4. Workspace configurations
+# Setup environment for ROS 2 and Gazebo
+RUN echo "source /opt/ros/humble/setup.bash" >> /root/.bashrc \
+    && echo "export GZ_VERSION=fortress" >> /root/.bashrc
+
+# Expose Gazebo default port
+EXPOSE 11345
+
+# Workspace directory
 RUN mkdir -p /ros2_ws/src
 WORKDIR /ros2_ws
 
-# 5. Envirometn configurations
+# Copy entrypoint and environment configuration
 COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
-
 COPY ros2_env.sh /ros2_env.sh
+RUN chmod +x /entrypoint.sh /ros2_env.sh
 
+# Entrypoint
 ENTRYPOINT ["/entrypoint.sh"]
 CMD ["bash"]
