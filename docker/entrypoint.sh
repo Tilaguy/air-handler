@@ -14,6 +14,9 @@ fi
 # GUI support
 export DISPLAY=${DISPLAY:-:0}
 export QT_X11_NO_MITSHM=1
+export NVIDIA_VISIBLE_DEVICES=all
+export NVIDIA_DRIVER_CAPABILITIES=all
+# NOTE: xhost +local:root should ideally be run on the host, not inside the container.
 xhost +local:root 2>/dev/null || true
 
 # Add ros2_env sourcing to bashrc only if not already present

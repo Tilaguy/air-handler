@@ -1,32 +1,34 @@
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.16)
 project(imu_plugin)
 
+# Busca paquetes de Ignition Gazebo (Fortress)
+find_package(ignition-gazebo7 REQUIRED COMPONENTS core all)
+find_package(ignition-math7 REQUIRED)
+find_package(ignition-msgs9 REQUIRED)
 find_package(ament_cmake REQUIRED)
-find_package(gazebo_dev REQUIRED)
-find_package(gazebo_ros REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(sensor_msgs REQUIRED)
-find_package(sensor_utils REQUIRED)
 
+# Incluye directorios
 include_directories(
   include
+  ${IGNITION-GAZEBO_INCLUDE_DIRS}
+  ${IGNITION-MATH_INCLUDE_DIRS}
 )
 
+# Define el plugin
 add_library(imu_plugin SHARED
   src/imu_plugin.cpp
 )
 
-ament_target_dependencies(imu_plugin
-  rclcpp
-  sensor_msgs
-  gazebo_ros
-  sensor_utils
-)
-
+# Enlaza librerías
 target_link_libraries(imu_plugin
-  ${GAZEBO_LIBRARIES}
+  ${IGNITION-GAZEBO_LIBRARIES}
+  ${IGNITION-MATH_LIBRARIES}
+  ${rclcpp_LIBRARIES}
 )
 
+# Instalación
 install(TARGETS imu_plugin
   LIBRARY DESTINATION lib
 )

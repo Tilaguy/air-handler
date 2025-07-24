@@ -1,21 +1,25 @@
 <?xml version="1.0" ?>
-<sdf version="1.6">
+<sdf version="1.9">
   <world name="default">
-    <!-- Ground -->
+    <!-- Ground Plane (modelo de Ignition) -->
     <include>
-      <uri>model://ground_plane</uri>
+      <uri>https://fuel.ignitionrobotics.org/1.0/OpenRobotics/models/Ground Plane</uri>
     </include>
 
-    <!-- Import sensor box -->
+    <!-- Modelo del sensor (debe estar en formato SDF 1.9) -->
     <include>
-      <uri>model://imu_box</uri>
+      <uri>model://imu_box</uri>  <!-- Asegúrate de que este modelo exista en tu entorno Ignition -->
     </include>
 
-    <!-- Plugin para inicializar ROS 2 -->
-    <plugin name="gazebo_ros_init" filename="libgazebo_ros_init.so">
-      <ros>
-        <namespace>/</namespace>
-      </ros>
+    <!-- Luz predeterminada -->
+    <include>
+      <uri>model://sun</uri>
+    </include>
+
+    <!-- Sistema de comunicación ROS 2 (opcional, si necesitas bridges) -->
+    <plugin 
+      filename="libignition-gazebo-ros2-system.so"
+      name="ignition::gazebo::systems::ROS2">
     </plugin>
   </world>
 </sdf>

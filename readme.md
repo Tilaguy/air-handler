@@ -111,3 +111,89 @@ colcon build --symlink-install
 # Source environment
 source install/setup.bash
 ```
+
+---
+---
+---
+---
+
+# 🌐 Proyecto de Simulación Realista de Sensores en Gazebo + ROS 2
+
+Hola ChatGPT, retomamos este proyecto desde cero en un nuevo hilo para continuar organizadamente. A continuación te dejo un resumen completo del estado actual, incluyendo infraestructura, sensores implementados, y lo que viene. Más abajo adjuntaré un PDF con documentación complementaria hecha en Notion.
+
+---
+
+## 🎯 Objetivo General
+
+Desarrollar un entorno de simulación realista en **ROS 2 Humble + Gazebo Fortress (6.17.0)**, donde se simulen sensores reales con errores físicos y se comuniquen como en la vida real (p. ej. usando sockets que emulan protocolos como I2C, SPI, CAN, etc).
+
+---
+
+## ✅ Sensores Simulados
+
+### 1. IMU (LSM6DSOX)
+
+- Publicación por **socket UNIX** con formato binario:
+  - Cabecera (0xA5), 6 valores `int16_t`, y 1 byte de checksum (XOR).
+- Codificación:
+  - Aceleraciones en m/s².
+  - Giroscopio en rad/seg.
+- Cliente en Python:
+  - Decodifica el buffer, grafica con `matplotlib`, guarda CSV.
+- **Modelo de error simulado:**
+  - Ruido gaussiano
+  - Clipping
+  - Drift
+  - Hysteresis
+  - Cuantización
+
+---
+
+### 2. Sensor de Fuerza (Honeywell FMA Series)
+
+- Mide solo **magnitud de fuerza perpendicular (Z)**.
+- Codificación:
+  - Basada en protocolo I2C del datasheet: 2 bits de estado + 14 bits de datos (2 bytes totales).
+- Cliente en Python (en construcción):
+  - Envia solcitud de datos mediante la direccion I2C del sensor (0x28) y un bit al final en 1 para simular la solicitud al sensor.
+  - Decodifica, aplica escala, muestra fuerza en tiempo real.
+- Simulación incluye:
+  - Ruido, clipping, histéresis, cuantización, y drift.
+
+---
+
+## 🧰 Infraestructura
+
+### Estructura de carpetas
+
+```bash
+/ros2_ws/src/
+│
+├── sensor_sim/
+│   ├── worlds/           # Archivos .world (uno por sensor y uno global)
+│   ├── launch/           # Launchers individuales para cada sensor
+│   └── all_sensors.world # Archivo global que se actualiza automáticamente
+│
+├── imu_plugin/           # Plugin ROS 2 en C++ para la IMU
+├── force_plugin/         # Plugin ROS 2 en C++ para el sensor de fuerza
+└── ...
+```
+
+### Scripts de automatización
+
+- `create_sensor_pkg.sh`:
+  - Crea toda la estructura base de un sensor.
+  - Reemplaza tokens como `__SENSOR_NAME__`, `__SOCKET_NAME__`, etc.
+  - Agrega el sensor al archivo `all_sensors.world`.
+
+## 🧪 Temas en desarrollo o por implementar
+
+- Mejorar modelos 3D:
+  - Mesh .dae optimizado desde FreeCAD.
+- Codificar nuevos sensores (altímetro, flujo óptico, radar).
+- Validar comunicaciones bajo errores o desconexiones.
+- Crear pruebas unitarias para cada sensor que se simule.
+
+## 📎 Documentación adicional
+
+En el siguiente mensaje voy a adjuntar un PDF exportado desde Notion donde detallo más sobre la arquitectura, decisiones técnicas, motivación, y pruebas realizadas.

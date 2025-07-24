@@ -1,7 +1,10 @@
 #include "imu_plugin/imu_plugin.hpp"
 
-#include <gazebo/sensors/Sensor.hh>
-#include <gazebo/sensors/SensorManager.hh>
+#include <ignition/msgs/imu.pb.h>
+#include <ignition/math/Vector3.hh>
+#include <ignition/plugin/Register.hh>
+#include <ignition/gazebo/components/Imu.hh>
+#include <ignition/gazebo/components/Name.hh>
 
 #include "sensor_utils/noise_utils.hpp"
 using sensor_utils::clipping_values;
@@ -9,8 +12,9 @@ using sensor_utils::gaussian_drift;
 using sensor_utils::gaussian_noise;
 using sensor_utils::quantize;
 
-#include <iomanip> // std::setprecision
+#include <iomanip>
 #include <sstream>
+#include <memory>
 
 namespace imu_plugin
 {
@@ -30,19 +34,24 @@ namespace imu_plugin
       RCLCPP_INFO(ros_node_->get_logger(), "IMU Plugin shutting down and removing socket.");
   }
 
-  void ImuPlugin::Load(gazebo::sensors::SensorPtr _sensor, sdf::ElementPtr _sdf)
+  void ImuPlugin::Configure(const ignition::gazebo::Entity &_entity,
+                            const std::shared_ptr<const sdf::Element> &_sdf,
+                            ignition::gazebo::EntityComponentManager &_ecm,
+                            ignition::gazebo::EventManager &_eventMgr)
   {
+    entity_ = _entity;
+
+    int64_t ts = _sdf->Get<double>("update_rate", 50).first;
+    update_interval_ = std::chrono::milliseconds(ts);
+
     rng_ = std::mt19937(std::random_device{}());
 
-    imu_sensor_ = std::dynamic_pointer_cast<gazebo::sensors::ImuSensor>(_sensor);
-    if (!imu_sensor_)
+    // Initialize ROS node
+    if (!rclcpp::ok())
     {
-      RCLCPP_ERROR(rclcpp::get_logger("ImuPlugin"), "Failed to cast to ImuSensor");
-      return;
+      rclcpp::init(0, nullptr);
     }
-
-    // ROS node and publisher
-    ros_node_ = gazebo_ros::Node::Get(_sdf, "imu_plugin_node");
+    ros_node_ = std::make_shared<rclcpp::Node>("imu_plugin_node");
 
     // Import parameters from SDF
     gyro_noise_stddev_ = _sdf->Get<double>("gyro_noise_stddev", 0.0).first;
@@ -54,16 +63,25 @@ namespace imu_plugin
     accel_drift_stddev_ = _sdf->Get<double>("accel_drift_stddev", 0.0).first;
     accel_resolution_ = _sdf->Get<double>("accel_resolution", 0.0).first;
 
+    if (!_ecm.EntityHasComponentType(entity_, ignition::gazebo::components::ImuSensor::typeId))
+    {
+      _ecm.CreateComponent(entity_, ignition::gazebo::components::ImuSensor());
+    }
+
+    // Habilitar los componentes que necesitamos
+    _ecm.SetComponentData<ignition::gazebo::components::ImuAngularVelocity>(entity_, {true});
+    _ecm.SetComponentData<ignition::gazebo::components::ImuLinearAcceleration>(entity_, {true});
+
     // Timer to publish
     update_timer_ = ros_node_->create_wall_timer(
         std::chrono::milliseconds(50),
         std::bind(&ImuPlugin::OnUpdate, this));
 
-    // Iniciar servidor socket en hilo aparte
+    // Start socket server in separate thread
     socket_thread_ = std::thread([this]()
                                  {
-      if (initUnixSocketServer())
-        acceptUnixSocketClient(); });
+        if (initUnixSocketServer())
+            acceptUnixSocketClient(); });
   }
 
   bool ImuPlugin::initUnixSocketServer()
@@ -146,16 +164,54 @@ namespace imu_plugin
     send(client_fd_, buffer, sizeof(buffer), 0);
   }
 
-  void ImuPlugin::OnUpdate()
+  void ImuPlugin::PreUpdate(const ignition::gazebo::UpdateInfo &_info,
+                            ignition::gazebo::EntityComponentManager &_ecm)
   {
-    if (!imu_sensor_)
+    if (_info.paused)
+    {
       return;
+    }
 
     /*=============================================
       Transduction Stage: Connect to simulated IMU
       =============================================*/
-    ignition::math::Vector3d linear_acc = imu_sensor_->LinearAcceleration();
-    ignition::math::Vector3d angular_vel = imu_sensor_->AngularVelocity();
+    auto imu_ang_vel = _ecm.Component<ignition::gazebo::components::ImuAngularVelocity>(entity_);
+    auto imu_lin_acc = _ecm.Component<ignition::gazebo::components::ImuLinearAcceleration>(entity_);
+
+    if (imu_ang_vel && imu_lin_acc)
+    {
+      angular_velocity_ = imu_ang_vel->Data();
+      linear_acceleration_ = imu_lin_acc->Data();
+    }
+  }
+
+  void ImuPlugin::OnUpdate()
+  {
+
+    auto now = std::chrono::steady_clock::now();
+    if (first_update_)
+    {
+      last_update_time_ = now;
+      first_update_ = false;
+      return;
+    }
+
+    auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - last_update_time_);
+    if (elapsed < update_interval_)
+    {
+      return;
+    }
+
+    last_update_time_ = now;
+
+    if (!angular_velocity_.has_value() || !linear_acceleration_.has_value())
+    {
+      RCLCPP_WARN(ros_node_->get_logger(), "No IMU data available yet");
+      return;
+    }
+
+    ignition::math::Vector3d angular_vel = angular_velocity_.value();
+    ignition::math::Vector3d linear_acc = linear_acceleration_.value();
 
     /*===================================================
       Error model Stage: realistic imperfections effects
@@ -192,6 +248,9 @@ namespace imu_plugin
     sendToSocket(linear_acc, angular_vel);
   }
 
-  GZ_REGISTER_SENSOR_PLUGIN(ImuPlugin)
+  IGNITION_ADD_PLUGIN(ImuPlugin,
+                      ignition::gazebo::System,
+                      ImuPlugin::ISystemConfigure,
+                      ImuPlugin::ISystemPreUpdate)
 
 } // namespace imu_plugin

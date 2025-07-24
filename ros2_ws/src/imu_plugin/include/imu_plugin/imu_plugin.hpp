@@ -1,56 +1,67 @@
-// imu_plugin.hpp (actualizado como servidor UNIX)
 #ifndef IMU_PLUGIN__IMU_PLUGIN_HPP_
 #define IMU_PLUGIN__IMU_PLUGIN_HPP_
 
-#include <gazebo/common/Plugin.hh>
-#include <gazebo/sensors/ImuSensor.hh>
-#include <gazebo_ros/node.hpp>
+#include <ignition/gazebo/System.hh>
+#include <ignition/gazebo/Model.hh>
+#include <ignition/transport/Node.hh>
 #include <rclcpp/rclcpp.hpp>
-#include <random>
-#include <fstream>
+#include <sensor_msgs/msg/imu.hpp>
+
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <unistd.h>
+#include <random>
 #include <thread>
+
+#include "sensor_utils/noise_utils.hpp"
 
 namespace imu_plugin
 {
 
-  class ImuPlugin : public gazebo::SensorPlugin
+  class ImuPlugin : public ignition::gazebo::System,
+                    public ignition::gazebo::ISystemConfigure,
+                    public ignition::gazebo::ISystemPreUpdate
   {
   public:
     ImuPlugin() = default;
     virtual ~ImuPlugin();
 
-    void Load(gazebo::sensors::SensorPtr _sensor, sdf::ElementPtr _sdf) override;
+    void Configure(const ignition::gazebo::Entity &_entity,
+                   const std::shared_ptr<const sdf::Element> &_sdf,
+                   ignition::gazebo::EntityComponentManager &_ecm,
+                   ignition::gazebo::EventManager &_eventMgr) override;
+
+    void PreUpdate(const ignition::gazebo::UpdateInfo &_info,
+                   ignition::gazebo::EntityComponentManager &_ecm) override;
 
   private:
-    void OnUpdate();
+    ignition::gazebo::Entity entity_;
+    std::optional<ignition::math::Vector3d> linear_acceleration_;
+    std::optional<ignition::math::Vector3d> angular_velocity_;
+    std::chrono::steady_clock::time_point last_update_time_;
+    std::chrono::milliseconds update_interval_;
+    bool first_update_ = true;
 
-    // Socket methods
+    void OnUpdate();
     bool initUnixSocketServer();
     void acceptUnixSocketClient();
     void sendToSocket(const ignition::math::Vector3d &acc, const ignition::math::Vector3d &gyro);
 
-    // Sensor and ROS objects
-    gazebo::sensors::ImuSensorPtr imu_sensor_;
-    gazebo_ros::Node::SharedPtr ros_node_;
+    rclcpp::Node::SharedPtr ros_node_;
     rclcpp::TimerBase::SharedPtr update_timer_;
+    std::thread socket_thread_;
 
-    struct ImuPacket
-    {
-      uint8_t header = 0xA5;
-      int16_t acc_x; // acceleration in mg
-      int16_t acc_y;
-      int16_t acc_z;
-      int16_t gyro_x; // Angular velocity in mdps
-      int16_t gyro_y;
-      int16_t gyro_z;
-      uint8_t checksum;
-    };
+    // Socket communication
+    int server_fd_ = -1;
+    int client_fd_ = -1;
+    struct sockaddr_un socket_addr_;
+    bool socket_ready_ = false;
 
-    // Noise generator
+    // Noise generation
     std::mt19937 rng_;
+    double gyro_bias_acum = 0;
+    double accel_bias_acum = 0;
+
     double gyro_noise_stddev_ = 0.0;
     double gyro_lim_ = 0.0;
     double gyro_drift_stddev_ = 0.0;
@@ -59,20 +70,8 @@ namespace imu_plugin
     double accel_lim_ = 0.0;
     double accel_drift_stddev_ = 0.0;
     double accel_resolution_ = 0.0;
-
-    double gyro_bias_acum = 0.0;
-    double accel_bias_acum = 0.0;
-    double prev_val = 0.0;
-    int prev_direction = 0;
-
-    // Socket communication
-    int server_fd_ = -1;
-    int client_fd_ = -1;
-    struct sockaddr_un socket_addr_;
-    std::thread socket_thread_;
-    bool socket_ready_ = false;
   };
 
 } // namespace imu_plugin
 
-#endif // IMU_PLUGIN__IMU_PLUGIN_HPP_
+#endif
